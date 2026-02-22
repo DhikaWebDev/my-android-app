@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Duel PRO</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#000;
+  color:#fff;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  overflow:hidden;
+}
+
+.container{
+  width:95vw;
+  max-width:420px;
+  text-align:center;
+  position:relative;
+}
+
+.shake{
+  animation:shake .3s;
+}
+
+@keyframes shake{
+  0%{transform:translateX(0);}
+  25%{transform:translateX(-5px);}
+  50%{transform:translateX(5px);}
+  75%{transform:translateX(-5px);}
+  100%{transform:translateX(0);}
+}
+
+.flash{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:red;
+  opacity:0;
+  pointer-events:none;
+}
+
+.bar{
+  height:16px;
+  background:#111;
+  border-radius:10px;
+  overflow:hidden;
+  margin:6px 0;
+}
+
+.hp{
+  height:100%;
+  width:100%;
+  transition:width .3s ease;
+}
+
+.player{background:#22c55e;}
+.bot{background:#ef4444;}
+
+.number{
+  font-size:32px;
+  margin:20px 0;
+  letter-spacing:6px;
+}
+
+input{
+  width:100%;
+  padding:12px;
+  font-size:20px;
+  text-align:center;
+  border:none;
+  border-radius:8px;
+  background:#111;
+  color:#fff;
+}
+
+button{
+  margin-top:10px;
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  background:#22c55e;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.damage{
+  position:absolute;
+  font-size:20px;
+  font-weight:bold;
+  animation:floatUp 0.8s forwards;
+}
+
+@keyframes floatUp{
+  0%{opacity:1; transform:translateY(0);}
+  100%{opacity:0; transform:translateY(-40px);}
+}
+
+.result{
+  margin-top:15px;
+  font-size:18px;
+}
+</style>
+</head>
+<body>
+
+<div class="flash" id="flash"></div>
+
+<div class="container" id="container">
+  <h1>🧠 Memory Duel</h1>
+
+  <div>Kamu ❤️</div>
+  <div class="bar"><div class="hp player" id="playerHP"></div></div>
+
+  <div>Bot 🤖</div>
+  <div class="bar"><div class="hp bot" id="botHP"></div></div>
+
+  <div class="number" id="numberDisplay">---</div>
+  <input type="text" id="answer" placeholder="Ketik angka tadi">
+  <button onclick="submitAnswer()">Jawab!</button>
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+let playerHP=100;
+let botHP=100;
+let currentNumber="";
+let digitLength=3;
+
+const container=document.getElementById("container");
+const flash=document.getElementById("flash");
+const playerHPBar=document.getElementById("playerHP");
+const botHPBar=document.getElementById("botHP");
+const numberDisplay=document.getElementById("numberDisplay");
+const answerInput=document.getElementById("answer");
+const resultEl=document.getElementById("result");
+
+function generateNumber(){
+  currentNumber="";
+  for(let i=0;i<digitLength;i++){
+    currentNumber+=Math.floor(Math.random()*10);
+  }
+  numberDisplay.textContent=currentNumber;
+
+  setTimeout(()=>{
+    numberDisplay.textContent="???";
+  },2000);
+}
+
+function submitAnswer(){
+  const playerAnswer=answerInput.value;
+
+  let playerCorrect = playerAnswer===currentNumber;
+  let botCorrect = botMemory();
+
+  if(playerCorrect && !botCorrect){
+    botHP-=15;
+    showDamage("-15", false);
+    resultEl.textContent="🔥 Kamu lebih cepat!";
+  }
+  else if(!playerCorrect && botCorrect){
+    playerHP-=15;
+    showDamage("-15", true);
+    resultEl.textContent="🤖 Bot lebih jago!";
+  }
+  else{
+    resultEl.textContent="⚡ Seri atau sama-sama salah!";
+  }
+
+  updateHP();
+  nextRound();
+}
+
+function botMemory(){
+  let accuracy=0.6;
+  if(botHP<=60) accuracy=0.75;
+  if(botHP<=40) accuracy=0.85;
+  if(botHP<=20) accuracy=0.95;
+  return Math.random()<accuracy;
+}
+
+function showDamage(text, playerHit){
+  const dmg=document.createElement("div");
+  dmg.className="damage";
+  dmg.textContent=text;
+  dmg.style.color=playerHit?"#ef4444":"#22c55e";
+  dmg.style.left="50%";
+  dmg.style.top=playerHit?"100px":"140px";
+  dmg.style.transform="translateX(-50%)";
+  container.appendChild(dmg);
+
+  setTimeout(()=>dmg.remove(),800);
+
+  container.classList.add("shake");
+  flash.style.opacity="0.15";
+
+  setTimeout(()=>{
+    container.classList.remove("shake");
+    flash.style.opacity="0";
+  },300);
+}
+
+function updateHP(){
+  playerHPBar.style.width=playerHP+"%";
+  botHPBar.style.width=botHP+"%";
+
+  if(playerHP<=0){
+    resultEl.textContent="💀 Kamu Kalah!";
+    endGame();
+  }
+  if(botHP<=0){
+    resultEl.textContent="🔥 Kamu Menang!";
+    endGame();
+  }
+}
+
+function nextRound(){
+  answerInput.value="";
+  digitLength++;
+  if(playerHP>0 && botHP>0){
+    setTimeout(generateNumber,1000);
+  }
+}
+
+function endGame(){
+  answerInput.disabled=true;
+}
+
+generateNumber();
+</script>
+
+</body>
+</html>
